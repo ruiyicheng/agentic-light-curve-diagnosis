@@ -1,0 +1,14 @@
+.env
+.DS_Store
+**/.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+*.log
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
