@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest:*)",
+      "Bash(pip install:*)",
+      "Bash(python -c:*)",
+      "Bash(python run_agent.py:*)",
+      "Bash(gh repo delete agentic-light-curve-diagnosis --yes)",
+      "Bash(rm -rf .git && find . -name \".DS_Store\" -delete && echo \"Cleaned up .git and .DS_Store files\")",
+      "Bash(git init && git branch -m main)"
+    ]
+  }
+}
