@@ -49,19 +49,13 @@ def create_diagnosis_agent(
         extra_body={"thinking": {"type": "disabled"}},
     )
 
-    # Bind tools
-    model_with_tools = raw_model.bind_tools(
-        tools=ALL_TOOLS,
-        parallel_tool_calls=False,
-    )
-
     # Setup skills directory
     if skills_dir is None:
         skills_dir = settings.skills_dir
 
     # Create agent
     agent = create_deep_agent(
-        model=model_with_tools,
+        model=raw_model,
         tools=ALL_TOOLS,
         backend=FilesystemBackend(root_dir=str(root_dir)),
         skills=[str(skills_dir)],

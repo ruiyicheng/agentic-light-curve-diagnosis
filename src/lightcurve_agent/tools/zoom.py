@@ -10,7 +10,7 @@ import pandas as pd
 from langchain_core.tools import tool
 
 from lightcurve_agent.config import get_settings
-from lightcurve_agent.core.data import load_light_curve
+from lightcurve_agent.core.data import inspect_light_curve_file, load_light_curve
 from lightcurve_agent.core.models import LightCurve
 from lightcurve_agent.core.plotting.base import PlotConfig, plot_light_curve
 from lightcurve_agent.core.plotting.grids import create_zoom_grid
@@ -21,10 +21,10 @@ from lightcurve_agent.interfaces.vlm import get_vlm_provider
 def obtain_zoom_in(
     csv_path: str,
     time_ranges: list[tuple[float, float]],
-    time_col: str = "time",
-    y_col: str = "mag",
-    yerr_col: str | None = "mag_err",
-    y_axis_type: Literal["mag", "flux"] = "mag",
+    time_col: str | None = None,
+    y_col: str | None = None,
+    yerr_col: str | None = None,
+    y_axis_type: Literal["mag", "flux", "auto"] = "auto",
 ) -> str:
     """Create zoomed-in plots for specific time ranges.
 
@@ -46,9 +46,17 @@ def obtain_zoom_in(
         settings = get_settings()
         out_dir = settings.artifacts_dir / "zooms"
         out_dir.mkdir(parents=True, exist_ok=True)
+        profile = inspect_light_curve_file(csv_path, scale=y_axis_type)
 
         # Load data
-        lc = load_light_curve(csv_path, time_col=time_col, mag_col=y_col, err_col=yerr_col, scale=y_axis_type)
+        lc = load_light_curve(
+            csv_path,
+            time_col=time_col or profile.time_col,
+            mag_col=y_col or profile.mag_col,
+            err_col=yerr_col,
+            band_col=profile.band_col,
+            scale=y_axis_type,
+        )
 
         t = np.asarray(lc.time)
         y = np.asarray(lc.magnitude)
@@ -58,9 +66,9 @@ def obtain_zoom_in(
         full_path = out_dir / "Zoom_in_full_view.png"
         full_config = PlotConfig(
             title="Full Light Curve",
-            x_label=f"{time_col} [d]",
-            y_label=y_col,
-            invert_y=y_axis_type == "mag",
+            x_label=f"{lc.time_col} [d]",
+            y_label=lc.mag_col,
+            invert_y=lc.scale == "mag",
         )
         plot_light_curve(lc, full_config, full_path)
 
@@ -79,18 +87,24 @@ def obtain_zoom_in(
                 time=t_z,
                 magnitude=y_z,
                 error=yerr_z,
-                time_col=f"{time_col} [d]",
-                mag_col=y_col,
-                err_col=yerr_col or "",
-                scale=y_axis_type,
+                band=lc.band.loc[mask].reset_index(drop=True) if lc.band is not None else None,
+                time_col=f"{lc.time_col} [d]",
+                mag_col=lc.mag_col,
+                err_col=lc.err_col,
+                band_col=lc.band_col,
+                scale=lc.scale,
+                source_name=lc.source_name,
+                ra_deg=lc.ra_deg,
+                dec_deg=lc.dec_deg,
+                metadata=lc.metadata.copy(),
             )
 
             z_path = out_dir / f"zoom_{i}.png"
             z_config = PlotConfig(
                 title=f"Zoom: {start} - {end} d",
-                x_label=f"{time_col} [d]",
-                y_label=y_col,
-                invert_y=y_axis_type == "mag",
+                x_label=f"{lc.time_col} [d]",
+                y_label=lc.mag_col,
+                invert_y=lc.scale == "mag",
             )
             plot_light_curve(zoom_lc, z_config, z_path)
             zoom_paths.append(z_path)

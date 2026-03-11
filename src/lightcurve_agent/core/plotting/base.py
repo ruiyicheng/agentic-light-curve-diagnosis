@@ -66,9 +66,28 @@ def plot_light_curve(
     t = np.asarray(lc.time)
     y = np.asarray(lc.magnitude)
     yerr = np.asarray(lc.error) if lc.error is not None else None
+    band = np.asarray(lc.band.astype(str)) if lc.band is not None else None
 
     # Plot data
-    if yerr is not None:
+    if band is not None and lc.band_labels:
+        colors = plt.cm.tab10(np.linspace(0, 1, max(len(lc.band_labels), 1)))
+        for color, label in zip(colors, lc.band_labels, strict=False):
+            mask = band == label
+            if yerr is not None:
+                ax.errorbar(
+                    t[mask],
+                    y[mask],
+                    yerr=yerr[mask],
+                    fmt=cfg.plot_style,
+                    capsize=0,
+                    elinewidth=0.5,
+                    color=color,
+                    label=label,
+                )
+            else:
+                ax.plot(t[mask], y[mask], cfg.plot_style, markersize=3, color=color, label=label)
+        ax.legend(title=lc.band_col or "band")
+    elif yerr is not None:
         ax.errorbar(t, y, yerr=yerr, fmt=cfg.plot_style, capsize=0, elinewidth=0.5, label="data")
     else:
         ax.plot(t, y, cfg.plot_style, markersize=3, label="data")
@@ -234,10 +253,16 @@ def plot_phase_folded(
         time=pd.Series(t_folded),
         magnitude=lc.magnitude,
         error=lc.error,
+        band=lc.band,
         time_col=cfg.x_label,
         mag_col=lc.mag_col,
         err_col=lc.err_col,
+        band_col=lc.band_col,
         scale=lc.scale,
+        source_name=lc.source_name,
+        ra_deg=lc.ra_deg,
+        dec_deg=lc.dec_deg,
+        metadata=lc.metadata.copy(),
     )
 
     return plot_light_curve(folded_lc, cfg, out_path)

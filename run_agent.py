@@ -48,30 +48,51 @@ Examples:
     parser.add_argument(
         "--time-col",
         type=str,
-        default="time",
-        help="Name of the time column (default: time)",
+        default=None,
+        help="Name of the time column (default: auto-detect from file head)",
     )
 
     parser.add_argument(
         "--mag-col",
         type=str,
-        default="mag",
-        help="Name of the magnitude/flux column (default: mag)",
+        default=None,
+        help="Name of the magnitude/flux column (default: auto-detect from file head)",
     )
 
     parser.add_argument(
         "--err-col",
         type=str,
-        default="mag_err",
-        help="Name of the error column (default: mag_err)",
+        default=None,
+        help="Name of the error column (default: auto-detect from file head)",
     )
 
     parser.add_argument(
         "--scale",
         type=str,
-        choices=["mag", "flux"],
-        default="mag",
-        help="Data scale: magnitude (inverted y-axis) or flux (default: mag)",
+        choices=["mag", "flux", "auto"],
+        default="auto",
+        help="Data scale: magnitude, flux, or auto-detect (default: auto)",
+    )
+
+    parser.add_argument(
+        "--source-name",
+        type=str,
+        default=None,
+        help="Optional source identifier for VSX/Gaia lookup",
+    )
+
+    parser.add_argument(
+        "--ra-deg",
+        type=float,
+        default=None,
+        help="Optional right ascension in degrees for VSX/Gaia lookup",
+    )
+
+    parser.add_argument(
+        "--dec-deg",
+        type=float,
+        default=None,
+        help="Optional declination in degrees for VSX/Gaia lookup",
     )
 
     parser.add_argument(
@@ -112,10 +133,16 @@ Examples:
     # Build user message
     user_msg = (
         f"Diagnose the light curve in {args.csv_path}. "
-        f"Columns: {args.time_col}, {args.mag_col}"
-        + (f", {args.err_col}" if args.err_col else "")
-        + f". Assume {args.scale} scale."
+        "Inspect the file head first and auto-detect columns if they are not supplied. "
     )
+    if args.time_col or args.mag_col or args.err_col:
+        user_msg += "Use these explicit columns when provided: "
+        user_msg += f"time={args.time_col or 'auto'}, y={args.mag_col or 'auto'}, err={args.err_col or 'auto'}. "
+    user_msg += f"Assume {args.scale} scale unless the file clearly indicates otherwise. "
+    if args.source_name:
+        user_msg += f"Source name: {args.source_name}. "
+    if args.ra_deg is not None and args.dec_deg is not None:
+        user_msg += f"Coordinates: RA={args.ra_deg} deg, Dec={args.dec_deg} deg. "
 
     print(f"User query: {user_msg}")
     print("-" * 50)

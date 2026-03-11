@@ -5,7 +5,7 @@ These are pure data structures with no dependencies on external services.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal, Self
 
@@ -20,10 +20,16 @@ class LightCurve:
     time: pd.Series
     magnitude: pd.Series
     error: pd.Series | None = None
+    band: pd.Series | None = None
     time_col: str = "time"
     mag_col: str = "mag"
     err_col: str = "mag_err"
+    band_col: str = ""
     scale: Literal["mag", "flux"] = "mag"
+    source_name: str | None = None
+    ra_deg: float | None = None
+    dec_deg: float | None = None
+    metadata: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         """Validate data consistency."""
@@ -32,6 +38,8 @@ class LightCurve:
             raise ValueError("time and magnitude must have same length")
         if self.error is not None and len(self.error) != n:
             raise ValueError("error series must match time length")
+        if self.band is not None and len(self.band) != n:
+            raise ValueError("band series must match time length")
 
     def masked(self, mask: np.ndarray) -> Self:
         """Return a new LightCurve with masked data."""
@@ -39,10 +47,16 @@ class LightCurve:
             time=self.time[mask],
             magnitude=self.magnitude[mask],
             error=self.error[mask] if self.error is not None else None,
+            band=self.band[mask] if self.band is not None else None,
             time_col=self.time_col,
             mag_col=self.mag_col,
             err_col=self.err_col,
+            band_col=self.band_col,
             scale=self.scale,
+            source_name=self.source_name,
+            ra_deg=self.ra_deg,
+            dec_deg=self.dec_deg,
+            metadata=self.metadata.copy(),
         )
 
     def to_dataframe(self) -> pd.DataFrame:
@@ -53,7 +67,39 @@ class LightCurve:
         })
         if self.error is not None:
             df[self.err_col] = self.error
+        if self.band is not None and self.band_col:
+            df[self.band_col] = self.band
         return df
+
+    @property
+    def band_labels(self) -> list[str]:
+        """Return distinct band labels in stable order."""
+        if self.band is None:
+            return []
+        labels = pd.Series(self.band).dropna().astype(str)
+        return list(dict.fromkeys(labels.tolist()))
+
+
+@dataclass(frozen=True)
+class LightCurveFileProfile:
+    """Detected schema and metadata for a light-curve file."""
+
+    path: Path
+    columns: list[str]
+    delimiter: str
+    n_rows: int
+    preview_rows: list[dict[str, object]]
+    time_col: str
+    mag_col: str
+    err_col: str | None
+    band_col: str | None
+    scale: Literal["mag", "flux"]
+    source_name: str | None = None
+    ra_deg: float | None = None
+    dec_deg: float | None = None
+    metadata: dict[str, str] = field(default_factory=dict)
+    band_labels: list[str] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -65,6 +111,7 @@ class Periodogram:
     grid_kind: Literal["period", "frequency"] = "period"
     best_value: float = 0.0
     best_power: float = 0.0
+    backend: str = "cpu"
 
     def __post_init__(self) -> None:
         """Validate data."""

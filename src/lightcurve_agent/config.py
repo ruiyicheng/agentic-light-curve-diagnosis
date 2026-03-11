@@ -8,11 +8,19 @@ from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+WORKSPACE_ROOT = PROJECT_ROOT.parent
+
+
 class Settings(BaseSettings):
     """Application settings loaded from environment variables and .env file."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(
+            str(PROJECT_ROOT / ".env"),
+            str(WORKSPACE_ROOT / ".env"),
+            ".env",
+        ),
         env_file_encoding="utf-8",
         extra="ignore",  # Allow extra env vars not defined here
     )

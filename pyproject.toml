@@ -27,6 +27,7 @@ dependencies = [
     "pandas>=2.0.0",
     "matplotlib>=3.7.0",
     "astropy>=5.0.0",
+    "astroquery>=0.4.7",
     "Pillow>=10.0.0",
     "openai>=1.0.0",
     "langchain>=0.1.0",
@@ -45,6 +46,9 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
     "pre-commit>=3.0.0",
+]
+gpu = [
+    "torch>=2.2.0",
 ]
 
 [project.scripts]
