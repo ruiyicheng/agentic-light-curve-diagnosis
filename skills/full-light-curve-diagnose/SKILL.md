@@ -85,4 +85,4 @@ Use this skill when the user asks to diagnose a variable source light curve and 
    - The results of the period analysis (best period, power, backend) if performed.
    - A list of the complete candidate types considered.
    - Level of scientific interest
-   - requirements for follow-up observations (if any).
+   - requirements for follow-up observations (if any), and how urgent is the follow-up observation with reason.
