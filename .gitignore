@@ -1,4 +1,6 @@
 .env
+.env.*
+!.env.example
 .DS_Store
 **/.DS_Store
 __pycache__/
@@ -9,6 +11,21 @@ __pycache__/
 *.log
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 *~
+
+# Local datasets and generated analysis outputs
+input/
+output/
+assets/
+data/
+artifacts/
+results/
+*.csv
+*.png
+*.jpg
+*.jpeg
+*.fits
+*.npz
